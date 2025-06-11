@@ -385,51 +385,36 @@ MS:NewButton("Stop Music","",function()
         if sInst then sInst:Stop(); sInst:Destroy(); sInst = nil end
     end)
 end)
--- ======= Toggle UI Button =======
-local toggleGui = Instance.new("ScreenGui")
-toggleGui.Name = "ToggleUI"
-toggleGui.ResetOnSpawn = false
-toggleGui.Parent = PlayerGui
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
 
-local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(0, 120, 0, 40)
-toggleButton.Position = UDim2.new(0, 10, 0.45, 0)
-toggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-toggleButton.Text = "Close / Open"
-toggleButton.TextColor3 = Color3.new(1, 1, 1)
-toggleButton.Font = Enum.Font.GothamBold
-toggleButton.TextSize = 22
-toggleButton.Parent = toggleGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ToggleUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 10)
-corner.Parent = toggleButton
+local Toggle = Instance.new("TextButton")
+Toggle.Name = "Toggle"
+Toggle.Parent = ScreenGui
+Toggle.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- black background
+Toggle.Position = UDim2.new(0, 10, 0.45, 0)
+Toggle.Size = UDim2.new(0, 140, 0, 40)
+Toggle.Font = Enum.Font.GothamBold
+Toggle.Text = "Close / Open"
+Toggle.TextColor3 = Color3.fromRGB(255, 0, 0) -- red text
+Toggle.TextScaled = true
+Toggle.TextWrapped = true
+Toggle.Draggable = true
+Toggle.Active = true
 
--- Toggle sounds
-local openSound = Instance.new("Sound", PlayerGui)
-openSound.SoundId = "rbxassetid://" -- ← You can insert a real sound ID
-openSound.Volume = 1
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 10)
+Corner.Parent = Toggle
 
-local closeSound = Instance.new("Sound", PlayerGui)
-closeSound.SoundId = "rbxassetid://" -- ← You can insert a real sound ID
-closeSound.Volume = 1
-
-local uiOpen = true
-
--- Animated rainbow background
-RunService.RenderStepped:Connect(function()
-    toggleButton.BackgroundColor3 = Color3.fromHSV(tick() % 5 / 5, 1, 1)
-end)
-
--- Toggle functionality
-toggleButton.MouseButton1Click:Connect(function()
-    uiOpen = not uiOpen
-    if Library and Library.ToggleUI then
+-- Click behavior
+Toggle.MouseButton1Click:Connect(function()
+    if Library then
         Library:ToggleUI()
-    end
-    if uiOpen then
-        openSound:Play()
-    else
-        closeSound:Play()
     end
 end)
