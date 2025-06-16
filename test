@@ -1,420 +1,141 @@
--- ======= Services =======
-local Players = game:GetService("Players")
-local VirtualUser = game:GetService("VirtualUser")
-local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local StarterGui = game:GetService("StarterGui")
-
-local Player = Players.LocalPlayer
-local PlayerGui = Player:WaitForChild("PlayerGui")
-
--- ======= Anti-AFK =======
-Player.Idled:Connect(function()
-    VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-    task.wait(1)
-    VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-end)
-
--- ======= Custom Notification Function =======
-local function showCustomNotification(message)
-    local old = PlayerGui:FindFirstChild("BaconHubNotification")
-    if old then old:Destroy() end
-    local gui = Instance.new("ScreenGui", PlayerGui)
-    gui.Name = "BaconHubNotification"
-    gui.ResetOnSpawn = false
-
-    local frame = Instance.new("Frame", gui)
-    frame.Size = UDim2.new(0,300,0,100)
-    frame.Position = UDim2.new(1,-320,1,-120)
-    frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-    frame.BackgroundTransparency = 0.2
-    frame.BorderSizePixel = 0
-    frame.AnchorPoint = Vector2.new(1,1)
-    frame.ClipsDescendants = true
-
-    local avatar = Instance.new("ImageLabel", frame)
-    avatar.Size = UDim2.new(0,80,0,80)
-    avatar.Position = UDim2.new(0,10,0.5,-40)
-    avatar.BackgroundTransparency = 1
-    avatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId="..Player.UserId.."&width=420&height=420&format=png"
-
-    local text = Instance.new("TextLabel", frame)
-    text.Size = UDim2.new(1,-110,1,-20)
-    text.Position = UDim2.new(0,100,0,10)
-    text.BackgroundTransparency = 1
-    text.Text = message
-    text.TextColor3 = Color3.fromRGB(255,255,255)
-    text.TextScaled = true
-    text.Font = Enum.Font.GothamBold
-    text.TextWrapped = true
-
-    task.delay(5, function()
-        for i=1,10 do
-            frame.BackgroundTransparency += 0.05
-            text.TextTransparency += 0.05
-            avatar.ImageTransparency += 0.05
-            task.wait(0.05)
-        end
-        gui:Destroy()
-    end)
-end
-
--- ======= Executor Detection =======
-local function detectExecutor()
-    if syn then return "Synapse X" end
-    if KRNL_LOADED then return "Krnl" end
-    if secure_load then return "Sentinel" end
-    if is_sirhurt_cl then return "Sirhurt" end
-    if identifyexecutor then return identifyexecutor() end
-    return "Unknown"
-end
-
--- ======= Welcome Notification =======
-showCustomNotification("Welcome "..Player.Name.."!\nExecutor: "..detectExecutor())
-
--- ======= Countdown Loader =======
-local function runWithCountdown(seconds, scriptFunc)
-    local gui = Instance.new("ScreenGui", PlayerGui)
-    gui.Name = "LoadingScriptGui"
-    gui.ResetOnSpawn = false
-    local label = Instance.new("TextLabel", gui)
-    label.Size = UDim2.new(0.3,0,0.08,0)
-    label.Position = UDim2.new(0.35,0,0.85,0)
-    label.BackgroundTransparency = 0.2
-    label.BackgroundColor3 = Color3.fromRGB(20,20,20)
-    label.TextColor3 = Color3.fromRGB(255,255,255)
-    label.Font = Enum.Font.GothamBold
-    label.TextScaled = true
-    label.Text = "Loading Script... Estimated: "..seconds.."s"
-
-    for i = seconds - 1, 0, -1 do
-        task.wait(1)
-        label.Text = "Loading Script... Estimated: "..i.."s"
-    end
-
-    gui:Destroy()
-    local ok, err = pcall(scriptFunc)
-    if not ok then
-        showCustomNotification("⚠️ Script Error:\n"..tostring(err))
-    end
-end
-
--- ======= Load UI =======
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/DenDenZZZ/Kavo-UI-Library/main/Kavo.lua"))()
-local Window = Library.CreateLib("BaconHub","BloodTheme")
-
--- ======= Credits Tab =======
-local Credits = Window:NewTab("Credits")
-local CR = Credits:NewSection("Info")
-CR:NewLabel("This is the official BaconHub.")
-CR:NewLabel("Thanks to Hehehe on Discord.")
-CR:NewLabel("Thanks for using this script!")
-CR:NewButton("Rejoin Server","",function()
-    runWithCountdown(2, function() TeleportService:Teleport(game.PlaceId,Player) end)
-end)
-CR:NewButton("Server Hop","",function()
-    runWithCountdown(3, function()
-        local ok,servers = pcall(function()
-            return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100"))
-        end)
-        if ok and servers and servers.data then
-            for _,s in ipairs(servers.data) do
-                if s.playing<s.maxPlayers and s.id~=game.JobId then
-                    TeleportService:TeleportToPlaceInstance(game.PlaceId,s.id,Player)
-                    break
-                end
-            end
-        end
-    end)
-end)
-
--- ======= Fly Tab =======
-local Fly = Window:NewTab("Fly")
-local F = Fly:NewSection("Fly Options")
-F:NewButton("Fly","",function()
-    runWithCountdown(3, function()
-        loadstring("\108\111\97\100\115\116\114\105\110\103\40\103\97\109\101\58\72\116\116\112\71\101\116\40\40\39\104\116\116\112\115\58\47\47\103\105\115\116\46\103\105\116\104\117\98\117\115\101\114\99\111\110\116\101\110\116\46\99\111\109\47\109\101\111\122\111\110\101\89\84\47\98\102\48\51\55\100\102\102\57\102\48\97\55\48\48\49\55\51\48\52\100\100\100\54\55\102\100\99\100\51\55\48\47\114\97\119\47\101\49\52\101\55\52\102\52\50\53\98\48\54\48\100\102\53\50\51\51\52\51\99\102\51\48\98\55\56\55\48\55\52\101\98\51\99\53\100\50\47\97\114\99\101\117\115\37\50\53\50\48\120\37\50\53\50\48\102\108\121\37\50\53\50\48\50\37\50\53\50\48\111\98\102\108\117\99\97\116\111\114\39\41\44\116\114\117\101\41\41\40\41\10\10")()
-    end)
-end)
-F:NewButton("FPS Boost","",function()
-    runWithCountdown(2, function()
-        for _,o in ipairs(game:GetDescendants()) do
-            if o:IsA("Texture") or o:IsA("Decal") or o:IsA("ParticleEmitter") or o:IsA("Trail") then
-                o:Destroy()
-            end
-        end
-        pcall(function()
-            sethiddenproperty(game.Lighting,"Technology",Enum.Technology.Compatibility)
-        end)
-        game.Lighting.GlobalShadows = false
-        game.Lighting.FogEnd = 1e5
-    end)
-end)
-
-local infJump = false
-UserInputService.JumpRequest:Connect(function()
-    if infJump then
-        local char = Player.Character or Player.CharacterAdded:Wait()
-        local h = char:FindFirstChildOfClass("Humanoid")
-        if h then h:ChangeState(Enum.HumanoidStateType.Jumping) end
-    end
-end)
-F:NewToggle("Infinite Jump","",function(s) infJump=s end)
-
--- ======= MM2 Tab =======
-local MM2 = Window:NewTab("MM2")
-local M2 = MM2:NewSection("Xhub Loader")
-M2:NewButton("Load Xhub","",function()
-    runWithCountdown(4, function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/andreylangtoh01/Xhub/refs/heads/main/Xhub"))()
-    end)
-end)
-M2:NewButton("Egg Farm","",function()
-    runWithCountdown(3, function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/AmareScripts/MM2/refs/heads/main/Easter%25AutoFarm.lua"))()
-    end)
-end)
-
--- ======= Super Tab (Secret) =======
-local Super = Window:NewTab("Super")
-local SU = Super:NewSection("Secret Script")
-SU:NewButton("Super S&J","",function()
-    runWithCountdown(3, function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/mekUsJ6i"))()
-    end)
-end)
-
--- ======= Troll Tab =======
-local Troll = Window:NewTab("Troll💀")
-local TR = Troll:NewSection("FE Troll Tools")
-TR:NewButton("Fling Touch","",function()
-    runWithCountdown(2, function()
-        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Touch-fling-script-22447"))()
-    end)
-end)
-TR:NewButton("Invisible","",function()
-    runWithCountdown(2, function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/3Rnd9rHf"))()
-    end)
-end)
-TR:NewButton("Nameless Admin","",function()
-    runWithCountdown(3, function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/jnsug6TB"))()
-    end)
-end)
-TR:NewButton("Bypass Chat","",function()
-    runWithCountdown(3, function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/twig76/ayra/refs/heads/main/ayras"))()
-    end)
-end)
-TR:NewButton("Player ESP","",function()
-    runWithCountdown(3, function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/cool83birdcarfly02six/UNIVERSALESPLTX/main/README.md"))()
-    end)
-end)
-
--- ======= Blade Ball Tab =======
-local BBTab = Window:NewTab("Blade Ball")
-local BBSection = BBTab:NewSection("Kalitor")
-
-BBSection:NewButton("BladeBall OP", "Loads OP bladeball script", function()
-    runWithCountdown(3, function()
-        loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/a70e413180d7ede96d4a09705648f630.lua"))()
-    end)
-end)
-
-BBSection:NewButton("Ash", "Loads Ash script", function()
-    runWithCountdown(3, function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/sirapobsriumang/Blade-ball/main/Blade-ball-free.lua"))()
-    end)
-end)
-
-BBSection:NewButton("Kryptonite", "Loads Kryptonite script", function()
-    runWithCountdown(3, function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Bitcoinlol/Kryptonite-free/refs/heads/main/Protected_5085813520974140.lua.txt"))()
-    end)
-end)
-
-BBSection:NewButton("108", "Loads 108 script", function()
-    runWithCountdown(3, function()
-        loadstring(game:HttpGet("https://pastefy.app/EgdTvwzS/raw"))()
-    end)
-end)
-
-BBSection:NewButton("Athenamikaela", "Loads Ash script alternate", function()
-    runWithCountdown(3, function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Athenamikaela/Key/refs/heads/main/Protected_9421685464654481.lua.txt"))()
-    end)
-end)
-
-
--- ======= Discord Tab =======
-local D = Window:NewTab("Discord"):NewSection("Join Our Server")
-D:NewButton("Join Discord","",function()
-    runWithCountdown(2, function()
-        if setclipboard then
-            setclipboard("https://discord.gg/w6PyskFT47")
-            showCustomNotification("Discord link copied!")
-        else
-            showCustomNotification("Clipboard not supported.")
-        end
-    end)
-end)
-
--- ======= Executor Tab =======
-local EX = Window:NewTab("Executor"):NewSection("Script Runner")
-local saved, histBtns = {}, {}
-local outLbl = EX:NewLabel("Output will appear here.")
-local function updateHistory()
-    for _,btn in ipairs(histBtns) do btn:Remove() end
-    histBtns = {}
-    for i,code in ipairs(saved) do
-        local short = code:sub(1,30):gsub("\n"," ")..(#code>30 and "..." or "")
-        local btn = EX:NewButton("Run #"..i, short, function()
-            runWithCountdown(2, function()
-                local ok, e = pcall(loadstring(code))
-                outLbl.Text = ok and "Script #"..i.." ran!" or "Error: "..tostring(e)
-            end)
-        end)
-        table.insert(histBtns, btn)
-    end
-end
-
-EX:NewTextBox("Run Script","",function(c)
-   if c ~= "" then
-       runWithCountdown(3, function()
-           local ok,r = pcall(loadstring(c))
-           outLbl.Text = ok and "Ran!" or "Error: "..tostring(r)
-           if ok then
-               table.insert(saved,1,c)
-               if #saved > 5 then table.remove(saved,6) end
-               updateHistory()
-           end
-       end)
-   else outLbl.Text = "No script!" end
-end)
-EX:NewTextBox("Run Script from URL","",function(url)
-   if url ~= "" then
-       runWithCountdown(3, function()
-           local ok,res = pcall(game.HttpGet, game, url)
-           if ok then
-               local ok2, r2 = pcall(loadstring(res))
-               outLbl.Text = ok2 and "Loaded!" or "Error: "..tostring(r2)
-               if ok2 then
-                   table.insert(saved,1,res)
-                   if #saved > 5 then table.remove(saved,6) end
-                   updateHistory()
-               end
-           else
-               outLbl.Text = "Fetch failed!"
-           end
-       end)
-   else outLbl.Text = "No URL!" end
-end)
-EX:NewButton("Clear Output",""," ",function() outLbl.Text = "" end)
-
--- ======= Universal Tab =======
-local U = Window:NewTab("Universal"):NewSection("FE Scripts")
-U:NewButton("Invisible 2.1","",function()
-    runWithCountdown(2, function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/vP6CrQJj"))()
-    end)
-end)
-U:NewButton("Aimbot","",function()
-    runWithCountdown(4, function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/DanielHubll/DanielHubll/refs/heads/main/Aimbot%20Mobile"))()
-    end)
-end)
-U:NewButton("Hitbox Extender","",function()
-    runWithCountdown(3, function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/AAPVdev/scripts/refs/heads/main/UI_LimbExtender.lua"))()
-    end)
-end)
-
--- ======= Animations Tab =======
-local A = Window:NewTab("Animations")
-local AS = A:NewSection("Adidas Animation")
-local humanoid = (Player.Character or Player.CharacterAdded:Wait()):WaitForChild("Humanoid")
-local currentAnim
-local anims = {
-    idle="rbxassetid://507766666",
-    walk="rbxassetid://507777826",
-    jump="rbxassetid://507776043"
+-- Sus Script List
+local susScripts = {
+    {name = "🎯 Bang V2", r6 = "https://pastebin.com/raw/aPSHMV6K", r15 = "https://pastebin.com/raw/1ePMTt9n"},
+    {name = "🎉 Get Banged", r6 = "https://pastebin.com/raw/zHbw7ND1", r15 = "https://pastebin.com/raw/7hvcjDnW"},
+    {name = "💥 Suck", r6 = "https://pastebin.com/raw/SymCfnAW", r15 = "https://pastebin.com/raw/p8yxRfr4"},
+    {name = "🔥 Get Suc", r6 = "https://pastebin.com/raw/FPu4e2Qh", r15 = "https://pastebin.com/raw/DyPP2tAF"},
+    {name = "⚡ Jerk", r6 = "https://pastefy.app/wa3v2Vgm/raw", r15 = "https://pastefy.app/YZoglOyJ/raw"},
+    {name = "💃 Twerk (Nicki)", r6 = nil, r15 = "https://pastebin.com/raw/88ngjvrb"},
 }
-local function playAnim(id)
-    if currentAnim then currentAnim:Stop() end
-    currentAnim = humanoid:LoadAnimation(Instance.new("Animation", humanoid){AnimationId = id})
-    currentAnim:Play()
+
+-- Rig type detector
+local function getRig()
+    local plr = game.Players.LocalPlayer
+    local char = plr.Character or plr.CharacterAdded:Wait()
+    local hum = char:WaitForChild("Humanoid")
+    return hum.RigType == Enum.HumanoidRigType.R15 and "r15" or "r6"
 end
-humanoid.Running:Connect(function(sp) playAnim(sp > 0 and anims.walk or anims.idle) end)
-humanoid.Jumping:Connect(function() playAnim(anims.jump) end)
-humanoid.StateChanged:Connect(function(_,st) if st == Enum.HumanoidStateType.Landed then playAnim(anims.idle) end end)
 
-AS:NewButton("Play Idle","",function()
-    runWithCountdown(2, function() playAnim(anims.idle) end)
-end)
-AS:NewButton("Play Walk","",function()
-    runWithCountdown(2, function() playAnim(anims.walk) end)
-end)
-AS:NewButton("Play Jump","",function()
-    runWithCountdown(2, function() playAnim(anims.jump) end)
-end)
+-- Create GUI
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "SussyHubGUI"
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- ======= Music Tab =======
-local M = Window:NewTab("Music")
-local MS = M:NewSection("Personal Music Player")
-local sInst
-MS:NewTextBox("Sound ID","",function(id)
-    runWithCountdown(3, function()
-        if sInst then sInst:Stop(); sInst:Destroy() end
-        if id:match("^%d+$") then
-            sInst = Instance.new("Sound", PlayerGui)
-            sInst.SoundId = "rbxassetid://"..id
-            sInst.Volume = 1
-            sInst.Looped = true
-            sInst:Play()
+-- Main GUI frame
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 300, 0, 350)
+main.Position = UDim2.new(0.5, -150, 0.5, -175)
+main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 8)
+
+local mainStroke = Instance.new("UIStroke", main)
+mainStroke.Color = Color3.fromRGB(255, 0, 80)
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Text = "💦 Sussy Hub 💦"
+title.TextColor3 = Color3.fromRGB(255, 0, 80)
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 20
+
+-- Buttons for each sus script
+local y = 50
+for _, scriptData in ipairs(susScripts) do
+    local btn = Instance.new("TextButton", main)
+    btn.Size = UDim2.new(0.9, 0, 0, 35)
+    btn.Position = UDim2.new(0.05, 0, 0, y)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16
+    btn.Text = scriptData.name
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    local btnStroke = Instance.new("UIStroke", btn)
+    btnStroke.Color = Color3.fromRGB(255, 0, 80)
+
+    btn.MouseButton1Click:Connect(function()
+        local rig = getRig()
+        local url = scriptData[rig]
+        if url then
+            pcall(function()
+                loadstring(game:HttpGet(url))()
+            end)
         else
-            warn("Invalid ID!")
+            warn("Script not available for " .. rig .. ": " .. scriptData.name)
         end
     end)
-end)
-MS:NewButton("Stop Music","",function()
-    runWithCountdown(1, function()
-        if sInst then sInst:Stop(); sInst:Destroy(); sInst = nil end
-    end)
-end)
-local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-local PlayerGui = Player:WaitForChild("PlayerGui")
 
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ToggleUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = PlayerGui
+    y = y + 40
+end
 
-local Toggle = Instance.new("TextButton")
-Toggle.Name = "Toggle"
-Toggle.Parent = ScreenGui
-Toggle.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- black background
-Toggle.Position = UDim2.new(0, 10, 0.45, 0)
-Toggle.Size = UDim2.new(0, 140, 0, 40)
-Toggle.Font = Enum.Font.GothamBold
-Toggle.Text = "Close / Open"
-Toggle.TextColor3 = Color3.fromRGB(255, 0, 0) -- red text
-Toggle.TextScaled = true
-Toggle.TextWrapped = true
-Toggle.Draggable = true
-Toggle.Active = true
+-- Toggle Button
+local toggle = Instance.new("TextButton", gui)
+toggle.Size = UDim2.new(0, 110, 0, 30)
+toggle.Position = UDim2.new(0, 10, 0, 10)
+toggle.Text = "🙈 Hide Hub"
+toggle.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggle.Font = Enum.Font.GothamBold
+toggle.TextSize = 14
+toggle.Active = true
+toggle.Draggable = true
+Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 6)
+local toggleStroke = Instance.new("UIStroke", toggle)
+toggleStroke.Color = Color3.fromRGB(255, 0, 80)
 
-local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 10)
-Corner.Parent = Toggle
-
--- Click behavior
-Toggle.MouseButton1Click:Connect(function()
-    if Library then
-        Library:ToggleUI()
+-- RGB Stroke Effect
+task.spawn(function()
+    local colors = {
+        Color3.fromRGB(255, 0, 80),
+        Color3.fromRGB(0, 255, 127),
+        Color3.fromRGB(0, 170, 255),
+        Color3.fromRGB(255, 170, 0),
+        Color3.fromRGB(170, 0, 255),
+    }
+    while true do
+        for _, color in ipairs(colors) do
+            toggleStroke.Color = color
+            mainStroke.Color = color
+            wait(0.2)
+        end
     end
+end)
+
+-- Toggle logic
+local showing = true
+toggle.MouseButton1Click:Connect(function()
+    showing = not showing
+    main.Visible = showing
+    toggle.Text = showing and "🙈 Hide Hub" or "👁 Show Hub"
+end)
+
+-- Freaky Person Notification
+local notif = Instance.new("Frame", gui)
+notif.Size = UDim2.new(0, 250, 0, 80)
+notif.Position = UDim2.new(0.5, -125, 0.2, 0)
+notif.BackgroundColor3 = Color3.fromRGB(40, 0, 60)
+notif.BackgroundTransparency = 0.1
+notif.Active = true
+notif.Draggable = true
+Instance.new("UICorner", notif).CornerRadius = UDim.new(0, 10)
+local notifStroke = Instance.new("UIStroke", notif)
+notifStroke.Color = Color3.fromRGB(255, 0, 200)
+notifStroke.Thickness = 2
+
+local msg = Instance.new("TextLabel", notif)
+msg.Size = UDim2.new(1, -10, 1, -10)
+msg.Position = UDim2.new(0, 5, 0, 5)
+msg.BackgroundTransparency = 1
+msg.Text = "You are a freaky person 👅"
+msg.Font = Enum.Font.GothamBold
+msg.TextColor3 = Color3.fromRGB(255, 255, 255)
+msg.TextScaled = true
+msg.TextWrapped = true
+
+-- Auto hide notification
+task.delay(5, function()
+    notif:Destroy()
 end)
